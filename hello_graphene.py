@@ -1,4 +1,4 @@
-from graphene import ObjectType, String, Schema, Int, Field, List
+from graphene import ObjectType, Mutation, String, Schema, Int, Field, List, Boolean
 import collections
 
 User = collections.namedtuple("User", [ 'id', 'email', 'password', 'first_name', 'last_name', 'company'])
@@ -7,7 +7,6 @@ data = {
     1: User('1', 'jane@doe.com', 'qwerty', 'jane', 'doe', 'corpo'),
     2: User('2', 'john@doe.com', 'qwerty', 'john', 'doe', 'megacorp')
 }
-
 
 class UserType(ObjectType):
     # this defines a user account
@@ -47,12 +46,35 @@ class Query(ObjectType):
     def resolve_users(root, info):
         return data.values()
 
-schema = Schema(query=Query)
+class CreateUser(Mutation):
+    class Arguments:
+        id = String()
+
+    ok = Boolean()
+    user = Field(lambda: UserType)
+
+    def mutate (root, info, id):
+        user = UserType(id=id)
+        ok = True
+        return CreateUser(user=user, ok=ok)
+
+class MyMutations(ObjectType):
+    create_user = CreateUser.Field()
+
+
+
+schema = Schema(query=Query, mutation=MyMutations)
 
 # Open python3 and type:
 # from hello_graphene import schema
 # query = '{users {firstName, lastName} }'
 # schema.execute(query).data
 #
+# Troubleshooting:
+# schema.execute(query)
+#
 # Other queries:
+# Single user:
 # query = '{user(key: 1) {firstName, lastName} }'
+# Mutation:
+# query = 'mutation createUser {createUser(id:"4") {user {id}ok}}'
